@@ -1,0 +1,34 @@
+---
+title: "Final Project: Geospatial Regressions"
+format: html
+editor: visual
+---
+
+## Background
+
+Regressions are considered the bread and butter of data analysis. They have been long used
+in economics and social science to establish causal relationships, but data
+science has utilized regression methods as a backbone for prediction. Spatial
+regressions take the power of regressions and add an element of spatial
+dependency.
+
+Space can impact how one generates data and be a form of systematic
+error in our analysis. Spatial analysis in its modern form has been implemented and iterated upon through many subjects: biology through plant distributions and animal movement, epidemiology through disease mapping, and most notably economics through spatial econometrics, Spatial structure helps regression model in two ways
+
+1.  Process of generating data is spatial e.g. price of homes often dependent on area
+
+2.  Geography can allow you to assess structure of errors and mispredictions if they are systematic, often times errors are assumed to be independently and identically distributed, but this assumption falls apart with spatial data
+
+Spatial regression is also easier to visualize than just rows and columns of data. This makes it easier to explain insights more broadly, rather than trying to tell a story through a few data points. 
+
+## Methods
+
+Spatial regressions describe a broad category of techniques that can be incorporated in regression analysis to incorporate space and geography. They also require some pre-processing in order to determine if space is in fact an important factor. Examples include:\
+
+-   Spatial autocorrelations
+
+    -   Often times in non-spatial regressions, one can use spatial autocorrelation tests like Moran\'s I, Geary\'s c, or Getis and Ord\'s G-statistic on residuals
+
+    -   If spatial autocorrelations exist, this can justify the use of spatial model
+
+-   Geographically weighted regression: local version of spatial regression that generates parameters disaggregated by spatial units of analysis
