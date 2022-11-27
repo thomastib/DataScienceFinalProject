@@ -6,14 +6,9 @@ editor: visual
 
 ## Background
 
-Regressions are considered the bread and butter of data analysis. They have been long used
-in economics and social science to establish causal relationships, but data
-science has utilized regression methods as a backbone for prediction. Spatial
-regressions take the power of regressions and add an element of spatial
-dependency.
+Regressions are considered the bread and butter of data analysis. They have been long used in economics and social science to establish causal relationships, but data science has utilized regression methods as a backbone for prediction. Spatial regressions take the power of regressions and add an element of spatial dependency.
 
-Space can impact how one generates data and be a form of systematic
-error in our analysis. Spatial analysis in its modern form has been implemented and iterated upon through many subjects: biology through plant distributions and animal movement, epidemiology through disease mapping, and most notably economics through spatial econometrics, Spatial structure helps regression model in two ways
+Space can impact how one generates data and be a form of systematic error in our analysis. Spatial analysis in its modern form has been implemented and iterated upon through many subjects: biology through plant distributions and animal movement, epidemiology through disease mapping, and most notably economics through spatial econometrics, Spatial structure helps regression model in two ways
 
 1.  Process of generating data is spatial e.g. price of homes often dependent on area
 
@@ -21,9 +16,11 @@ error in our analysis. Spatial analysis in its modern form has been implemented 
 
 Spatial regression is also easier to visualize than just rows and columns of data. This makes it easier to explain insights more broadly, rather than trying to tell a story through a few data points. 
 
-##  Methods
+## Methods
 
-Regression models can sometimes display clustering in the error terms, which is a potential violation of i.i.d assumption in linear models. To interrogate whether or not there is clustering, one can observe distribution of error terms dis-aggregated by a spatial element of concern, visualizes how the median income in a state's counties differs by their distance to a major metro area, for example. An example of a of more sophisticated test that can be used to decipher a spatial element is a spatial autocorrelation test. Often times in non-spatial regressions, one can use spatial autocorrelation tests like Moran\'s I, Geary\'s c, or Getis and Ord\'s G-statistic on residuals. If spatial autocorrelations exist, this can justify the use of spatial model
+Source: Geographic Data Science in Python
+
+Regression models can sometimes display clustering in the error terms, which is a potential violation of i.i.d assumption in linear models. To interrogate whether or not there is clustering, one can observe distribution of error terms dis-aggregated by a spatial element of concern, visualizes how the median income in a state's counties differs by their distance to a major metro area, for example. An example of a of more sophisticated test that can be used to decipher a spatial element is a spatial autocorrelation test. Often times in non-spatial regressions, one can use spatial autocorrelation tests like Moran's I, Geary's c, or Getis and Ord's G-statistic on residuals. If spatial autocorrelations exist, this can justify the use of spatial model
 
 **Spatial Weights**
 
@@ -48,3 +45,97 @@ Spatial regression involves introducing geographic space or context into our reg
     -   Spatial feature engineering is the process of developing additional information from raw data using geographical knowledge
 
     -   Simplest example -
+
+## Application
+
+Source: https://walker-data.com/census-r/modeling-us-census-data.html
+
+Now that we've discussed the background and various methods used in spatial regressions, let's utilize the Census's American Community Survey (ACS) data to see how it all plays out in practice. Demographic statistics are common covariates utilized in linear regression, but they run into issues with spatial autocorrelation, which makes ACS data a great candidate for spatial regression techniques.
+
+First, we define a set of counties we want to analyze, and return a set of variables, using the *tidycensus* package. We load in the sf package as well so we can do a spatial join later.
+
+```{r}
+
+library(units)
+library(sf)
+library(tidycensus)
+
+dfw_counties <- c("Collin County", "Dallas", "Denton", 
+                  "Ellis", "Hunt", "Kaufman", "Rockwall", 
+                  "Johnson", "Parker", "Tarrant", "Wise")
+
+variables_to_get <- c(
+  median_value = "B25077_001",
+  median_rooms = "B25018_001",
+  median_income = "DP03_0062",
+  total_population = "B01003_001",
+  median_age = "B01002_001",
+  pct_college = "DP02_0068P",
+  pct_foreign_born = "DP02_0094P",
+  pct_white = "DP05_0077P",
+  median_year_built = "B25037_001",
+  percent_ooh = "DP04_0046P"
+)
+
+dfw_data <- get_acs(
+  geography = "tract",
+  variables = variables_to_get,
+  state = "TX",
+  county = dfw_counties,
+  geometry = TRUE,
+  output = "wide",
+  year = 2020
+) %>%
+  select(-NAME) %>%
+  st_transform(32138) # NAD83 / Texas North Central
+
+```
+
+Next, we do some feature engineering by adding population density which represents the number of people in each Census tract per square kilo and median_structure_age, which represents median age of housing structures in tract.
+
+```{r}
+
+dfw_data_for_model <- dfw_data %>%
+  mutate(pop_density = as.numeric(set_units(total_populationE / st_area(.), "1/km2")),
+         median_structure_age = 2018 - median_year_builtE) %>%
+  select(!ends_with("M")) %>% 
+  rename_with(.fn = ~str_remove(.x, "E$")) %>%
+  na.omit()
+```
+
+Like indicated before, the main idea behind spatial autocorrelation is that the independence of residuals are violated because the model's performance depends on geographic location.
+
+One technique we discussed before for testing spatial autocorrelation was Moran's *I.* Let's use it
+
+```{r}
+
+library(spdep)
+
+wts <- dfw_data_for_model %>%
+  poly2nb() %>%
+  nb2listw()
+
+moran.test(dfw_data_for_model$residuals)
+
+dfw_data_for_model$lagged_residuals <- lag.listw(wts, dfw_data_for_model$residuals)
+
+ggplot(dfw_data_for_model, aes(x = residuals, y = lagged_residuals)) + 
+  theme_minimal() + 
+  geom_point(alpha = 0.5) + 
+  geom_smooth(method = "lm", color = "red")
+```
+
+If we observe that there is spatial autocorrelation, we can use a spatial error model in order to account for this, where we capture latent spatial processes not accounted for in the model's estimation being captured in the residuals. This can be done with the errorsarlm() function in spatialreg.
+
+```{r}
+
+error_model <- errorsarlm(
+  formula = formula2, 
+  data = dfw_data_for_model, 
+  listw = wts
+)
+
+summary(error_model, Nagelkerke = TRUE)
+```
+
+We look at lambda to confirm if it is large and statistically significant, which confirms to us the importance of accounting for spatial autocorrelation.
