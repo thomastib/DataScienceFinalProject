@@ -1,19 +1,22 @@
 ---
 title: "Final Project: Geospatial Regressions"
-format: html
+subtitle: "Data Science for Public Policy"
+authors: "Akbar Syed Naqvi, Thomas Tiberghien Alvarez"
+format: 
+  html:
+    code-line-numbers: true
 editor: visual
+execute: 
+  warning: false
+self-contained: true
+urlcolor: blue
 ---
 
 ## Background
 
-Regressions are considered the bread and butter of data analysis. They have been long used
-in economics and social science to establish causal relationships, but data
-science has utilized regression methods as a backbone for prediction. Spatial
-regressions take the power of regressions and add an element of spatial
-dependency.
+Regressions are considered the bread and butter of data analysis. They have been long used in economics and social science to establish causal relationships, but data science has utilized regression methods as a backbone for prediction. Spatial regressions take the power of regressions and add an element of spatial dependency.
 
-Space can impact how one generates data and be a form of systematic
-error in our analysis. Spatial analysis in its modern form has been implemented and iterated upon through many subjects: biology through plant distributions and animal movement, epidemiology through disease mapping, and most notably economics through spatial econometrics, Spatial structure helps regression model in two ways
+Space can impact how one generates data and be a form of systematic error in our analysis. Spatial analysis in its modern form has been implemented and iterated upon through many subjects: biology through plant distributions and animal movement, epidemiology through disease mapping, and most notably economics through spatial econometrics, Spatial structure helps regression model in two ways
 
 1.  Process of generating data is spatial e.g. price of homes often dependent on area
 
@@ -27,7 +30,7 @@ Spatial regressions describe a broad category of techniques that can be incorpor
 
 -   Spatial autocorrelations
 
-    -   Often times in non-spatial regressions, one can use spatial autocorrelation tests like Moran\'s I, Geary\'s c, or Getis and Ord\'s G-statistic on residuals
+    -   Often times in non-spatial regressions, one can use spatial autocorrelation tests like Moran's I, Geary's c, or Getis and Ord's G-statistic on residuals
 
     -   If spatial autocorrelations exist, this can justify the use of spatial model
 
