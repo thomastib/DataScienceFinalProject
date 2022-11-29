@@ -12,7 +12,9 @@ self-contained: true
 urlcolor: blue
 ---
 
-## Background
+## Background and Motivation
+
+Geographic data is everywhere. This type of data also explains many social processes and individual decisions. As this kind of data becomes more ubiquitous, it is important to understand where and how to use it, and how to extract meaningful insights from geographical properties
 
 Regressions are considered the bread and butter of data analysis. They have been long used in economics and social science to establish causal relationships, but data science has utilized regression methods as a backbone for prediction. Spatial regressions take the power of regressions and add an element of spatial dependency.
 
@@ -30,11 +32,9 @@ Source: Geographic Data Science in Python
 
 Regression models can sometimes display clustering in the error terms, which is a potential violation of i.i.d assumption in linear models. To interrogate whether or not there is clustering, one can observe distribution of error terms dis-aggregated by a spatial element of concern, visualizes how the median income in a state's counties differs by their distance to a major metro area, for example. An example of a of more sophisticated test that can be used to decipher a spatial element is a spatial autocorrelation test. Often times in non-spatial regressions, one can use spatial autocorrelation tests like Moran's I, Geary's c, or Getis and Ord's G-statistic on residuals. If spatial autocorrelations exist, this can justify the use of spatial model
 
-
     -   Often times in non-spatial regressions, one can use spatial autocorrelation tests like Moran's I, Geary's c, or Getis and Ord's G-statistic on residuals
 
 **Spatial Weights**
-
 
 Spatial questions target specific information about the spatial configuration of an outcome variable. When it comes to spatial analysis, we are often building a topography, a mathematical structure that expresses connectivity between observations. This weighting can help us create a *geographically weighted regression*; local version of spatial regression that generates parameters dis aggregated by spatial units of analysis , partial weights are one way to express this topology. Examples of spatial weights include
 
