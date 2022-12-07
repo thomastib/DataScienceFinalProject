@@ -30,11 +30,9 @@ Source: Geographic Data Science in Python
 
 Regression models can sometimes display clustering in the error terms, which is a potential violation of i.i.d assumption in linear models. To interrogate whether or not there is clustering, one can observe distribution of error terms dis-aggregated by a spatial element of concern, visualizes how the median income in a state's counties differs by their distance to a major metro area, for example. An example of a of more sophisticated test that can be used to decipher a spatial element is a spatial autocorrelation test. Often times in non-spatial regressions, one can use spatial autocorrelation tests like Moran's I, Geary's c, or Getis and Ord's G-statistic on residuals. If spatial autocorrelations exist, this can justify the use of spatial model
 
-
     -   Often times in non-spatial regressions, one can use spatial autocorrelation tests like Moran's I, Geary's c, or Getis and Ord's G-statistic on residuals
 
 **Spatial Weights**
-
 
 Spatial questions target specific information about the spatial configuration of an outcome variable. When it comes to spatial analysis, we are often building a topography, a mathematical structure that expresses connectivity between observations. This weighting can help us create a *geographically weighted regression*; local version of spatial regression that generates parameters dis aggregated by spatial units of analysis , partial weights are one way to express this topology. Examples of spatial weights include
 
@@ -62,9 +60,11 @@ Spatial regression involves introducing geographic space or context into our reg
 
 Source: https://walker-data.com/census-r/modeling-us-census-data.html
 
-Now that we've discussed the background and various methods used in spatial regressions, let's utilize the Census's American Community Survey (ACS) data to see how it all plays out in practice. Demographic statistics are common covariates utilized in linear regression, but they run into issues with spatial autocorrelation, which makes ACS data a great candidate for spatial regression techniques.
+Now that we've discussed the background and various methods used in spatial regressions, we can utilize the Census's American Community Survey (ACS) data to see how it all plays out in practice. Demographic statistics are common covariates utilized in linear regression, but they run into issues with spatial autocorrelation, which makes ACS data a great candidate for spatial regression techniques.
 
-First, we define a set of counties we want to analyze, and return a set of variables, using the *tidycensus* package. We load in the sf package as well so we can do a spatial join later.
+Using the *tidycensus* package, we are interested in the effects of several predictor variables on the employment rate in Texas, namely the effect of the proportion of Spanish speakers in a given Census tract that do not speak English "very well", given Texas's high Hispanic population. We would expect that this has a negative effect on employment, however, in parts of the state that border Mexico in the Rio Grande Valley, knowing English may not be beneficial as in other parts of the state,\\ so we would expect to see a spatial variation in the effect.
+
+We also include other demographic variables like population density, median age, percent of people with a bachelor's degree, percent of people foreign born and percent of people who are white. We must do some extra calculations for employment rate by dividing total employment by the total labor force, and also the share of Spanish speakers who do not speak English very well, dividing the number of them for a given tract by the total population. We load in the sf package as well so we can do a spatial join later.
 
 ```{r}
 
@@ -72,48 +72,72 @@ library(units)
 library(sf)
 library(tidycensus)
 
-dfw_counties <- c("Collin County", "Dallas", "Denton", 
-                  "Ellis", "Hunt", "Kaufman", "Rockwall", 
-                  "Johnson", "Parker", "Tarrant", "Wise")
+
 
 variables_to_get <- c(
-  median_value = "B25077_001",
-  median_rooms = "B25018_001",
+  lf = "B23025_003",
+  employed = "B23025_004",
+  sp_lesseng= "B06007_005",
   median_income = "DP03_0062",
   total_population = "B01003_001",
   median_age = "B01002_001",
   pct_college = "DP02_0068P",
   pct_foreign_born = "DP02_0094P",
-  pct_white = "DP05_0077P",
-  median_year_built = "B25037_001",
-  percent_ooh = "DP04_0046P"
+  pct_white = "DP05_0077P"
 )
 
-dfw_data <- get_acs(
+tx_data <- get_acs(
   geography = "tract",
   variables = variables_to_get,
   state = "TX",
-  county = dfw_counties,
   geometry = TRUE,
   output = "wide",
   year = 2020
 ) %>%
   select(-NAME) %>%
-  st_transform(32138) # NAD83 / Texas North Central
+  st_transform(32138)
 
-```
-
-Next, we do some feature engineering by adding population density which represents the number of people in each Census tract per square kilo and median_structure_age, which represents median age of housing structures in tract.
-
-```{r}
-
-dfw_data_for_model <- dfw_data %>%
-  mutate(pop_density = as.numeric(set_units(total_populationE / st_area(.), "1/km2")),
-         median_structure_age = 2018 - median_year_builtE) %>%
-  select(!ends_with("M")) %>% 
+tx_data<- tx_data %>%
+  mutate(pop_density = as.numeric(set_units(total_populationE / st_area(.), "1/km2")), emp_rt= 100*employedE/lfE, less_eng_rt = 100*sp_lessengE/total_population) %>%
+  select(!ends_with("M")) %>%
   rename_with(.fn = ~str_remove(.x, "E$")) %>%
   na.omit()
 ```
+
+Now that we have our data, we first do some basic exploratory data analysis by mapping our outcome variable and main predictor of interest.
+
+```{r}
+
+tx_emp<- ggplot(tx_data, aes(fill = emp_rt)) +
+  geom_sf(color = NA) +
+  scale_fill_viridis_c(direction = -1) +
+  theme_void() +
+  labs(fill = "Employment Rate (%)")
+tx_eng <- ggplot(tx_data, aes(fill = less_eng_rt)) +
+  geom_sf(color = NA) +
+  scale_fill_viridis_c(direction = -1) +
+  theme_void() +
+  labs(fill = "Percent of People Who Speak English Less Than Very Well")
+
+tx_emp
+tx_eng
+```
+
+We see that, as expected, there is a clear spatial variation in the share the population who are Spanish speakers who do not speak English very well, specifically with the region in South Texas around the Rio Grande Valley having a higher concentration. The spatial pattern in employment seems less clear, however we do see a slight but noticeably lower level of employment in the Rio Grande Valley area.
+
+In order to establish a baseline to check for spatial autocorrelation, we want to start off by running a basic multivariate regression including our predictors and outcome variable. We do this using the "lm" package, which specializes in linear regression.
+
+```{r}
+
+
+formula <- "emp_rt ~ less_eng_rt + median_income + pct_college + pct_foreign_born + pct_white + median_age + pop_density + total_population"
+
+model1 <- lm(formula = formula, data = tx_data)
+
+summary(model1)
+```
+
+We observe a positive and statistically significant relationship between the share of the population who speak Spanish and do not speak English very well, and employment. This is a counterintuitive outcome, which might indicates there is considerable regional variation happening under the hood. Perhaps it is the case that speaking Spanish is more of an advantage than a lack of English skills in certain areas of the state, while the same may not be true in other areas. This is why we need to see how the effect varies across space, and makes us potentially suspect spatial autocorrelation.
 
 Like indicated before, the main idea behind spatial autocorrelation is that the independence of residuals are violated because the model's performance depends on geographic location.
 
@@ -121,33 +145,59 @@ One technique we discussed before for testing spatial autocorrelation was Moran'
 
 ```{r}
 
+tx_data$residuals <- residuals(model1)
+
 library(spdep)
 
-wts <- dfw_data_for_model %>%
+wts <- tx_data %>%
   poly2nb() %>%
   nb2listw()
 
-moran.test(dfw_data_for_model$residuals)
+moran.test(tx_data$residuals)
 
-dfw_data_for_model$lagged_residuals <- lag.listw(wts, dfw_data_for_model$residuals)
-
-ggplot(dfw_data_for_model, aes(x = residuals, y = lagged_residuals)) + 
-  theme_minimal() + 
-  geom_point(alpha = 0.5) + 
-  geom_smooth(method = "lm", color = "red")
 ```
-
-If we observe that there is spatial autocorrelation, we can use a spatial error model in order to account for this, where we capture latent spatial processes not accounted for in the model's estimation being captured in the residuals. This can be done with the errorsarlm() function in spatialreg.
 
 ```{r}
 
-error_model <- errorsarlm(
-  formula = formula2, 
-  data = dfw_data_for_model, 
-  listw = wts
-)
+library(GWmodel)
+library(sf)
 
-summary(error_model, Nagelkerke = TRUE)
+tx_data_sp <- tx_data %>%
+as_Spatial()
+
+bw <- bw.gwr(
+formula = formula,
+data = tx_data_sp,
+kernel = "bisquare",
+adaptive = TRUE)
+
+
 ```
 
-We look at lambda to confirm if it is large and statistically significant, which confirms to us the importance of accounting for spatial autocorrelation.
+Now, we can run the regression. Our output will be an object with both the results of a global model and the ranges of locally varying estimates. We can extract mappable model results as well using the "SDF" element, which contains a Spatial Polygons Data Frame.
+
+```{r}
+
+gw_model <- gwr.basic(
+  formula = formula, 
+  data = tx_data_sp, 
+  bw = bw,
+  kernel = "bisquare",
+  adaptive = TRUE
+)
+
+gw_model_results <- gw_model$SDF %>%
+  st_as_sf() 
+
+```
+
+Now, we can map the partial effect of the share of people in a tract not being able to speak English very well on employment a given tract, and look at locally varying results.
+
+```{r}
+ggplot(gw_model_results, aes(fill = less_eng_rt)) + 
+  geom_sf(color = NA) + 
+  scale_fill_viridis_c() + 
+  theme_void() + 
+  labs(fill = "Local β for \nshare of Spanish speakers \nnot speaking English very well")
+
+```
