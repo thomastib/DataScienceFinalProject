@@ -64,9 +64,6 @@ Once you determine that there is spatial autocorrelation, it then becomes import
 
 Source: Geographic Data Science in Python
 
-Regression models can sometimes display clustering in the error terms, which is a potential violation of i.i.d assumption in linear models. To interrogate whether or not there is clustering, one can observe distribution of error terms dis-aggregated by a spatial element of concern, visualizes how the median income in a state's counties differs by their distance to a major metro area, for example. An example of a of more sophisticated test that can be used to decipher a spatial element is a spatial autocorrelation test. Often times in non-spatial regressions, one can use spatial autocorrelation tests like Moran's I, Geary's c, or Getis and Ord's G-statistic on residuals. If spatial autocorrelations exist, this can justify the use of spatial model
-
-    -   Often times in non-spatial regressions, one can use spatial autocorrelation tests like Moran's I, Geary's c, or Getis and Ord's G-statistic on residuals
 
 **Spatial Weights**
 
@@ -98,92 +95,161 @@ Spatial regression involves introducing geographic space or context into our reg
 
 Source: https://walker-data.com/census-r/modeling-us-census-data.html
 
-Now that we've discussed the background and various methods used in spatial regressions, let's utilize the Census's American Community Survey (ACS) data to see how it all plays out in practice. Demographic statistics are common covariates utilized in linear regression, but they run into issues with spatial autocorrelation, which makes ACS data a great candidate for spatial regression techniques.
+Now that we've discussed the background and various methods used in spatial regressions, we can utilize the Census's American Community Survey (ACS) data to see how it all plays out in practice. Demographic statistics are common covariates utilized in linear regression, but they run into issues with spatial autocorrelation, which makes ACS data a great candidate for spatial regression techniques.
 
-First, we define a set of counties we want to analyze, and return a set of variables, using the *tidycensus* package. We load in the sf package as well so we can do a spatial join later.
+Using the [*tidycensus*](https://walker-data.com/census-r/modeling-us-census-data.html) package, we are interested in the effects of several predictor variables on the unemployment rate in Texas, namely the effect of the proportion of Spanish speakers in a given Census tract given Texas's high Hispanic population. We would expect that being able to speak Spanish has a negative effect on the unemployment rate in Texas, but we are interested to see how this effect varies in different regions in the state, in particular, South Texas near the Mexican border where virtually all residents speak Spanish.
+
+We also include other demographic variables like population density, median age, percent of people with a bachelor's degree, percent of people foreign born and percent of people who are white. These predictors are important so we can control for the many different factors associated with speaking Spanish, especially in a state where Hispanic Americans are less affluent than other groups due to reasons unrelated to the language they speak. We must do some extra calculations for unemployment rate by dividing total employment by the total labor force, and also the share of Spanish speakers who do not speak English very well, dividing the number of them for a given tract by the total population.
 
 ```{r}
 
+library(tidyverse)
 library(units)
 library(sf)
 library(tidycensus)
 
-dfw_counties <- c("Collin County", "Dallas", "Denton", 
-                  "Ellis", "Hunt", "Kaufman", "Rockwall", 
-                  "Johnson", "Parker", "Tarrant", "Wise")
 
-variables_to_get <- c(
-  median_value = "B25077_001",
-  median_rooms = "B25018_001",
+
+variables<- c(
+  lf = "B23025_003",
+  unemployed = "B27011_008",
+  speak_sp= "B06007_003",
   median_income = "DP03_0062",
   total_population = "B01003_001",
   median_age = "B01002_001",
   pct_college = "DP02_0068P",
   pct_foreign_born = "DP02_0094P",
-  pct_white = "DP05_0077P",
-  median_year_built = "B25037_001",
-  percent_ooh = "DP04_0046P"
+  pct_white = "DP05_0077P"
 )
 
-dfw_data <- get_acs(
+tx_data <- get_acs(
   geography = "tract",
-  variables = variables_to_get,
+  variables = variables,
   state = "TX",
-  county = dfw_counties,
   geometry = TRUE,
   output = "wide",
   year = 2020
 ) %>%
   select(-NAME) %>%
-  st_transform(32138) # NAD83 / Texas North Central
+  st_transform(32138)
 
-```
-
-Next, we do some feature engineering by adding population density which represents the number of people in each Census tract per square kilo and median_structure_age, which represents median age of housing structures in tract.
-
-```{r}
-
-dfw_data_for_model <- dfw_data %>%
-  mutate(pop_density = as.numeric(set_units(total_populationE / st_area(.), "1/km2")),
-         median_structure_age = 2018 - median_year_builtE) %>%
-  select(!ends_with("M")) %>% 
+tx_data<- tx_data %>%
+  mutate(pop_density = as.numeric(set_units(total_populationE / st_area(.), "1/km2")), unemp_rt= 100*unemployedE/lfE, speak_sp_rt = 100*speak_spE/total_populationE) %>%
+  select(!ends_with("M")) %>%
   rename_with(.fn = ~str_remove(.x, "E$")) %>%
   na.omit()
 ```
 
+Now that we have our data, we first do some basic exploratory data analysis by mapping our outcome variable and main predictor of interest.
+
+```{r}
+
+tx_unemp<- ggplot(tx_data, aes(fill = unemp_rt)) +
+  geom_sf(color = NA) +
+  scale_fill_viridis_c(option = "magma", direction = -1) +
+  theme_void() +
+  labs(fill = "Unemployment Rate (%)")
+tx_sp <- ggplot(tx_data, aes(fill = speak_sp_rt)) +
+  geom_sf(color = NA) +
+  scale_fill_viridis_c(option = "magma", direction = -1) +
+  theme_void() +
+  labs(fill = "Share of people who speak Spanish (%)")
+
+tx_unemp
+tx_sp
+```
+
+We see that, as expected, there is a clear spatial variation in the share the population who speak Spanish, specifically with the region in South Texas around the Rio Grande Valley having a higher concentration. The spatial pattern in unemployment seems less clear, however we do see a slight but noticeably higher unemployment in the Rio Grande Valley area. However, this likely may be due to the fact that there is higher poverty in that area, and that a more robust analysis is needed that filters this out to look at the effect of Spanish speaking at a spatial level.
+
+In order to establish a baseline to check for spatial autocorrelation, we want to start off by running a basic multivariate regression including our predictors and outcome variable. We do this using the "lm" package, which specializes in linear regression.
+
+```{r}
+
+
+formula <- "unemp_rt ~ speak_sp_rt + median_income + pct_college + pct_foreign_born + pct_white + median_age + pop_density + total_population"
+
+lm_model <- lm(formula = formula, data = tx_data)
+
+summary(lm_model)
+```
+
+We observe a negative and statistically significant partial effect of Spanish speaking on the unemployment rate . This is an outcome that aligns with our initial hypothesis. However, it is worth noting that this is an average across all tracts in Texas, and as mentioned before, South Texas has a much higher share of Spanish speakers than other parts of Texas, so we suspect that this effect will be different there than in other regions. This is why we need to check our regression for any spatial autocorrelation, and then remedy it if it exists.
+
 Like indicated before, the main idea behind spatial autocorrelation is that the independence of residuals are violated because the model's performance depends on geographic location.
 
-One technique we discussed before for testing spatial autocorrelation was Moran's *I.* Let's use it
+One technique we discussed before for testing spatial autocorrelation was Moran's *I.* We can use the [spdep](https://r-spatial.github.io/spdep) package to utilize this technique. This package contains a collection of functions to create spatial weights matrix objects from polygon contiguities as well as perform spatial autocorrelation tests. We use the "poly2nb" function to create a neighbors matrix and from that list, generate spatial weights. Then, we can conduct our test.
 
 ```{r}
 
 library(spdep)
 
-wts <- dfw_data_for_model %>%
+tx_data$residuals <- residuals(lm_model)
+wts <- tx_data %>%
   poly2nb() %>%
   nb2listw()
 
-moran.test(dfw_data_for_model$residuals)
+moran.test(tx_data$residuals, wts)
 
-dfw_data_for_model$lagged_residuals <- lag.listw(wts, dfw_data_for_model$residuals)
-
-ggplot(dfw_data_for_model, aes(x = residuals, y = lagged_residuals)) + 
-  theme_minimal() + 
-  geom_point(alpha = 0.5) + 
-  geom_smooth(method = "lm", color = "red")
 ```
 
-If we observe that there is spatial autocorrelation, we can use a spatial error model in order to account for this, where we capture latent spatial processes not accounted for in the model's estimation being captured in the residuals. This can be done with the errorsarlm() function in spatialreg.
+From the results of the rest, we can see that the Moran's I statistic is positive at just under 0.11, and statistically significant with p-value close to zero. Thus, we can conlude there is spatial autocorrelation within the linear model's residuals.
+
+There are many ways to deal with spatial autocorrelation through regression. One may utilize a global technique like [spatial lag models or spatial error models](https://walker-data.com/census-r/modeling-us-census-data.html#spatial-regression). In both cases, the model accounts for spatial spillover effects. The spatial lag model includes a spatial lag, or the average of neighboring values of a location, of the outcome variable in the model itself, while a spatial error model includes the spatial lag within the error term. These models help capture the average effect of our predictors on our outcome variable filtering out the spatial effects which may violate our assumption of independent and identically distributed random variables.
+
+However, since Texas is such a diverse state, we are more interested in how the effect of Spanish speaking on unemployment is regionally distributed. To see this we want to ideally be able to run a seperate regression for every collection of similar and contiguous tracts in Texas that incorporates spillover effects from surrounding neighborhoods and shows us the geospatial heterogeneity of our model.
+
+We can do this with a [Geographically Weighted Regression](https://walker-data.com/census-r/modeling-us-census-data.html#geographically-weighted-regression) (GWR). A GWR is really a set of local regressions designed to give us a coefficient for every unit of geography we are interested in. In order to do this, we can use the [GWmodel](https://www.jstatsoft.org/article/view/v063i17) package. This package includes functions for summary statistics, principal components analaysis regression and discriminant analysis all in a geographic weighted framework.
+
+First, we need to choose a kernel bandwidth, which will give us a way to calculate the nearest neighbors of each location in order to be able to incorporate neighborhood effects. We can calculate an ideal kernel bandwidth by utilizing cross validation with the function bw.gwr after turning our data into a spatial data frame.
 
 ```{r}
 
-error_model <- errorsarlm(
-  formula = formula2, 
-  data = dfw_data_for_model, 
-  listw = wts
-)
+library(GWmodel)
+library(sf)
 
-summary(error_model, Nagelkerke = TRUE)
+tx_data_sp <- tx_data %>%
+as_Spatial()
+
+bw <- bw.gwr(
+formula = formula,
+data = tx_data_sp,
+kernel = "bisquare",
+adaptive = TRUE)
+
+
 ```
 
-We look at lambda to confirm if it is large and statistically significant, which confirms to us the importance of accounting for spatial autocorrelation.
+Now, we can run the regression using the bandwidth generated. Our output will be an object with both the results of a global model and the ranges of locally varying estimates. We can extract mappable model results as well using the "SDF" element, which contains a spatial polygons data frame which contains our coefficients, r-squared and other parameters for each neighborhood.
+
+```{r}
+
+gw_model <- gwr.basic(
+  formula = formula, 
+  data = tx_data_sp, 
+  bw = bw,
+  kernel = "bisquare",
+  adaptive = TRUE
+)
+
+gw_model_results <- gw_model$SDF %>%
+  st_as_sf() 
+
+```
+
+Now, we can map the partial effect of the share of people in a tract of Spanish speaking on unemployment in a given neighborhood, and look at locally varying results.
+
+```{r}
+ggplot(gw_model_results, aes(fill = speak_sp_rt)) + 
+  geom_sf(color = NA) + 
+  scale_fill_viridis_c(option = "magma") + 
+  theme_void() + 
+  labs(fill = "Local regression coefficients for 
+       \nshare of Spanish speakers")
+
+```
+
+From our graph, we observe some interesting patterns. Our original regression demonstrated that being able to speak Spanish is associated with lower levels of unemployment, ceteris parabis in the state of Texas. Mapping the regional variation geospatially shows us that most of this effect is being driven by Central Texas, where the effect of the share of Spanish speakers on lowering unemployment is much stronger than any other region of the country. Also of note is that in South Texas, near the Mexican border, the share of Spanish speakers, which would be estimated to be very high, is actually associated with higher unemployment.
+
+These results have some potential explanations. The area in Central Texas in which the coefficient demonstrates a stronger relationship is the region that surrounds the Austin metro area, which is considered a particularly fast growing and cosmopolitan region of the state. It is likely that more job opportunities exist in this region in the first place, so knowing Spanish opens one up to more opportunities in the job market. Additionally, [Central Texas is only 23% Hispanic, compared to the state as a whole which is 38% Hispanic](https://comptroller.texas.gov/economy/economic-data/regions/2020/central.php). Thus, there is more of a comparative advantage knowing Spanish there than in other parts of the state.
+
+In South Texas, we actually see a small but positive relationship between Spanish speaking and unemployment. Considering that this area borders Mexico, it's likely that Spanish is the first language for many residents and businesses that operate there. Thus, it's possible that the people who do not speak Spanish are unique in ways that allow them to be more attractive in the job market, subsequently making Spanish-speaking positively associated with unemployment, although this is, again, a small effect.
