@@ -40,7 +40,9 @@ The first important question to ask when doing regression is whether it is appro
 
 #### Moran's I test
 
-This test computes an index based on the distance between points. An index of -1 means that the data is evenly spread out, an index of 0 means that the data is random, and an index of 1 means that the data is clumped together. This index is then compared to critical values to see if there is significant spatial autocorrelation (based on a null hypothesis that there isn't)
+This test computes an index based on the distance between points. An index of -1 means that the data is evenly spread out, an index of 0 means that the data is random, and an index of 1 means that the data is clumped together. This index is then compared to critical values to see if there is significant spatial autocorrelation (based on a null hypothesis that there isn't).
+
+Since this is the most common autocorrelation test, this is the one we will be using.
 
 #### Geary's C test
 
@@ -60,10 +62,13 @@ Once you determine that there is spatial autocorrelation, it then becomes import
 
 -   Rook contiguity weighting: This method assigns a weight based on whether it is contiguous (i.e., touching) with other data points. A data point is given a weight of 1 if it is contiguous with at least one other data point, and a weight of 0 if it is not. This method is easy to understand, but it only gives a binary measure and does not take into account the actual distance between points.
 
+### Spatial Lag
+
+### GWR/Kernel Bandwidth
+
 ------------------------------------------------------------------------
 
 Source: Geographic Data Science in Python
-
 
 **Spatial Weights**
 
@@ -90,6 +95,28 @@ Spatial regression involves introducing geographic space or context into our reg
     -   Simplest example -
 
 ------------------------------------------------------------------------
+
+## Geospatial Regression with R
+
+There are several R packages that can be used to perform geospatial regression. Some of the most popular and widely used packages include:
+
+-   **`spdep`**: This package provides a wide range of functions for spatial data analysis, including spatial regression. It includes functions for generating spatial weights matrices, fitting spatial regression models, and evaluating the results of spatial regression analysis.
+
+-   **`spatialreg`**: This package provides specialized functions for spatial regression analysis, including global and local spatial regression models, spatial autocorrelation analysis, and spatial error models. It also includes tools for visualizing the results of spatial regression analysis.
+
+-   **`GWmodel`**: This package provides functions for fitting GWR models to spatial data, as well as tools for evaluating the model fit and interpreting the results. It includes functions for estimating the spatial variation in the model coefficients, as well as functions for visualizing the results of GWR analysis.
+
+Other useful R packages when working with spatial data:
+
+-   **`sf`**: This package provides classes and functions for working with simple features, which are a standard data format for storing spatial data in R. It includes classes for representing simple features, such as points, lines, and polygons, as well as functions for reading, writing, and manipulating simple features.
+
+-   **`sp`**: This package provides classes and functions for working with spatial data in R. It includes classes for spatial data objects, such as points, lines, and polygons, as well as functions for reading, writing, and manipulating spatial data.
+
+-   **`tidycensus`**: This package provides tools for working with data from the US Census Bureau. It allows users to easily download and work with Census data in R, using a "tidy" data format that is compatible with other tidyverse packages.
+
+-   **`geosphere`**: This package provides functions for calculating distances and bearings between geographic coordinates, which can be used in spatial regression analysis. It also includes functions for generating spatial weights matrices based on distance, contiguity, or network relationships.
+
+-   **`raster`**: This package provides functions for working with raster data, which is commonly used in geospatial analysis. It includes functions for reading, writing, and manipulating raster data, as well as functions for spatial interpolation and spatial regression.
 
 ## Application
 
@@ -196,7 +223,7 @@ From the results of the rest, we can see that the Moran's I statistic is positiv
 
 There are many ways to deal with spatial autocorrelation through regression. One may utilize a global technique like [spatial lag models or spatial error models](https://walker-data.com/census-r/modeling-us-census-data.html#spatial-regression). In both cases, the model accounts for spatial spillover effects. The spatial lag model includes a spatial lag, or the average of neighboring values of a location, of the outcome variable in the model itself, while a spatial error model includes the spatial lag within the error term. These models help capture the average effect of our predictors on our outcome variable filtering out the spatial effects which may violate our assumption of independent and identically distributed random variables.
 
-However, since Texas is such a diverse state, we are more interested in how the effect of Spanish speaking on unemployment is regionally distributed. To see this we want to ideally be able to run a seperate regression for every collection of similar and contiguous tracts in Texas that incorporates spillover effects from surrounding neighborhoods and shows us the geospatial heterogeneity of our model.
+However, since Texas is such a diverse state, we are more interested in how the effect of Spanish speaking on unemployment is regionally distributed. To see this we want to ideally be able to run a separate regression for every collection of similar and contiguous tracts in Texas that incorporates spillover effects from surrounding neighborhoods and shows us the geospatial heterogeneity of our model.
 
 We can do this with a [Geographically Weighted Regression](https://walker-data.com/census-r/modeling-us-census-data.html#geographically-weighted-regression) (GWR). A GWR is really a set of local regressions designed to give us a coefficient for every unit of geography we are interested in. In order to do this, we can use the [GWmodel](https://www.jstatsoft.org/article/view/v063i17) package. This package includes functions for summary statistics, principal components analaysis regression and discriminant analysis all in a geographic weighted framework.
 
@@ -253,3 +280,17 @@ From our graph, we observe some interesting patterns. Our original regression de
 These results have some potential explanations. The area in Central Texas in which the coefficient demonstrates a stronger relationship is the region that surrounds the Austin metro area, which is considered a particularly fast growing and cosmopolitan region of the state. It is likely that more job opportunities exist in this region in the first place, so knowing Spanish opens one up to more opportunities in the job market. Additionally, [Central Texas is only 23% Hispanic, compared to the state as a whole which is 38% Hispanic](https://comptroller.texas.gov/economy/economic-data/regions/2020/central.php). Thus, there is more of a comparative advantage knowing Spanish there than in other parts of the state.
 
 In South Texas, we actually see a small but positive relationship between Spanish speaking and unemployment. Considering that this area borders Mexico, it's likely that Spanish is the first language for many residents and businesses that operate there. Thus, it's possible that the people who do not speak Spanish are unique in ways that allow them to be more attractive in the job market, subsequently making Spanish-speaking positively associated with unemployment, although this is, again, a small effect.
+
+## Conclusion
+
+Geospatial regression is a rapidly evolving field, and there have been many recent developments and innovations in the field. Some of these changes include:
+
+-   The availability of new geospatial data sources, such as satellite imagery, remote sensing data, and social media data, has expanded the range of applications for geospatial regression.
+
+-   The development of new machine learning techniques, such as deep learning and spatial deep learning, has improved the accuracy and efficiency of geospatial regression models.
+
+-   The use of high-performance computing and distributed computing technologies has enabled the analysis of larger and more complex geospatial data sets.
+
+-   The integration of geospatial regression with other geospatial analysis techniques, such as spatial autocorrelation analysis and spatial interpolation, has allowed for more sophisticated spatial analysis.
+
+-   The emergence of new software tools and platforms, such as open-source GIS software and cloud-based geospatial analysis platforms, has made geospatial regression more accessible to a wider audience.
