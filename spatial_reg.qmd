@@ -12,7 +12,9 @@ self-contained: true
 urlcolor: blue
 ---
 
-## Background
+## Background and Motivation
+
+Geographic data is everywhere. This type of data also explains many social processes and individual decisions. As this kind of data becomes more ubiquitous, it is important to understand where and how to use it, and how to extract meaningful insights from geographical properties
 
 Regressions are considered the bread and butter of data analysis. They have been long used in economics and social science to establish causal relationships, but data science has utilized regression methods as a backbone for prediction. Spatial regressions take the power of regressions and add an element of spatial dependency.
 
@@ -26,9 +28,42 @@ Spatial regression is also easier to visualize than just rows and columns of dat
 
 ## Methods
 
+### Spatial Autocorrelation
+
+The first important question to ask when doing regression is whether it is appropriate to include a spatial element. This might seem obvious in some cases, but not necessarily all the time. A series of tests have thus been developed to test for what is called spatial autocorrelation. Spatial autocorrelation is a measure of how similar the values of a variable are within a certain geographic area. If spatial autocorrelation is not accounted for, regression models might over or underestimate relationships between dependent and independent variables and undermine the validity of the models. The most common spatial autocorrelation tests are:
+
+-   Moran's I test
+
+-   Geary's C test
+
+-   Getis-Ord G test
+
+#### Moran's I test
+
+This test computes an index based on the distance between points. An index of -1 means that the data is evenly spread out, an index of 0 means that the data is random, and an index of 1 means that the data is clumped together. This index is then compared to critical values to see if there is significant spatial autocorrelation (based on a null hypothesis that there isn't)
+
+#### Geary's C test
+
+This test is very similar to Moran's I test but is more sensitive to local spatial autocorrelation. In other words, whereas Moran's tests the global spatial autocorrelation, Geary's measures the pattern of spatial correlation within sub-regions of the data. The results are also the different to Moran's, with values closer to 0 representing positive spatial autocorrelation and higher than 1 representing negative spatial autocorrelation.
+
+#### Getis-Ord G test
+
+The Getis-Ord G test is a statistical test used to identify spatial patterns, such as hot spots and cold spots, in data. This test is based on a measure called the G statistic, which ranges from -infinity to +infinity. A positive G statistic indicates a hot spot, where the values of the dependent variable are higher than expected given their spatial location. A negative G statistic indicates a cold spot, where the values of the dependent variable are lower than expected given their spatial location. As before, the G statistic can then be compared to a critical value to determine whether the spatial patterns in the data are statistically significant.
+
+### Spatial Weighting
+
+Once you determine that there is spatial autocorrelation, it then becomes important to account for the effects of spatial proximity on the relationship between the dependent and independent variables. In geospatial regression, spatial weighting involves assigning a weight to each data point based on its distance from other data points. This weight is used to adjust the regression model, allowing it to take into account the fact that the values of the dependent variable are likely to be more similar to the values of other nearby data points than to data points that are farther away. There are also several ways to assign weights to data points:
+
+-   Inverse distance weighting: Taking the inverse of the distance between a data point and all other data points. This method is based on the assumption that the values of the dependent variable are more likely to be similar to the values of nearby data points than to data points that are farther away. This metric is sensitive to the choice of the distance metric (meters vs kilometers), and produce unrealistic spatial weights if the data contains outliers or clusters.
+
+-   K-nearest neighbor weighting: This method assigns a weight to each data point based on the number of other data points (k) that are within a certain distance of the data point. This method can produce unrealistic spatial weights if the data contains clusters of different sizes.
+
+-   Rook contiguity weighting: This method assigns a weight based on whether it is contiguous (i.e., touching) with other data points. A data point is given a weight of 1 if it is contiguous with at least one other data point, and a weight of 0 if it is not. This method is easy to understand, but it only gives a binary measure and does not take into account the actual distance between points.
+
+------------------------------------------------------------------------
+
 Source: Geographic Data Science in Python
 
-Regression models can sometimes display clustering in the error terms, which is a potential violation of i.i.d assumption in linear models. To interrogate whether or not there is clustering, one can observe distribution of error terms dis-aggregated by a spatial element of concern, visualizes how the median income in a state's counties differs by their distance to a major metro area, for example. An example of a of more sophisticated test that can be used to decipher a spatial element is a spatial autocorrelation test. Often times in non-spatial regressions, one can use spatial autocorrelation tests like Moran's I, Geary's c, or Getis and Ord's G-statistic on residuals. If spatial autocorrelations exist, this can justify the use of spatial mode
 
 **Spatial Weights**
 
@@ -53,6 +88,8 @@ Spatial regression involves introducing geographic space or context into our reg
     -   Spatial feature engineering is the process of developing additional information from raw data using geographical knowledge
 
     -   Simplest example -
+
+------------------------------------------------------------------------
 
 ## Application
 
