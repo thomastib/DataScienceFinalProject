@@ -1,7 +1,7 @@
 ---
 title: "Final Project: Geospatial Regressions"
 subtitle: "Data Science for Public Policy"
-authors: "Akbar Syed Naqvi, Thomas Tiberghien Alvarez"
+authors: "Akbar Naqvi, Thomas Tiberghien Alvarez"
 format: 
   html:
     code-line-numbers: true
@@ -63,7 +63,6 @@ Once you determine that there is spatial autocorrelation, it then becomes import
 ------------------------------------------------------------------------
 
 Source: Geographic Data Science in Python
-
 
 **Spatial Weights**
 
@@ -254,4 +253,10 @@ These results have some potential explanations. The area in Central Texas in whi
 
 In South Texas, we actually see a small but positive relationship between Spanish speaking and unemployment. Considering that this area borders Mexico, it's likely that Spanish is the first language for many residents and businesses that operate there. Thus, it's possible that the people who do not speak Spanish are unique in ways that allow them to be more attractive in the job market, subsequently making Spanish-speaking positively associated with unemployment, although this is, again, a small effect.
 
-## 
+## Conclusion and Discussion
+
+Spatial regressions are one of several potential methods in a rising field of spatial analysis. Whether it is to deal with violations of the i.i.d assumption in order to create a more robust global model, or utilize the power of geospatial mapping techniques to illustrate local relationships, it is a flexible and broad analytical tool that can be applied in many disciplines including economics, biostatistics, criminology, and others.
+
+What we have demonstrated in this paper just scratches the surface. The future of spatial regression techniques has numerous possibilities. The recent utilization of satellite imagery, for examples, offers the opportunity to work with raw data spanning millions of observations of pixels. Such techniques are [especially important for tracking how communities are able to achieve target social and environmental goals](https://www.oecd.org/iaos2018/programme/IAOS-OECD2018_Holloway-Mengersen-Helmstedt.pdf). Some satellite imagery can even provide information on night-time imaging, which has even been [utilized in linear regression to measure housing vacancy within census tracts](https://www.mdpi.com/2072-4292/10/12/1920/htm). Additionally, more advanced AI capabilities and machine learning techniques can supplement spatial regression analysis. For example,[one analysis](https://www.tandfonline.com/doi/abs/10.1080/00045608.2012.707587) used a combination of clustering using a SKATER algorithm commonly used to determine spatial relationships between neighboring areas, and dimension reduction with Principal Component Analysis (PCA) to derive a mixed GWR\]
+
+Overall, this emergence and power makes spatial regression analysis the future of both predictive and causal quantitative analysis in academic and policy circles. Numerous science and social science questions include space as a factor, and we have only recently found a way to use spatial regression techniques to incorporate the complexity they deserve. Thus, we believe that spatial regressions will soon become the most common form of regression analysis used to solve important policy problems., and it was prudent to examine its basics in this paper.
