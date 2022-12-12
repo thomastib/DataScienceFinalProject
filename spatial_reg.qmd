@@ -28,6 +28,8 @@ Spatial regression is also easier to visualize than just rows and columns of dat
 
 ## Methods
 
+### Brief Refresher on Regression
+
 ### Spatial Autocorrelation
 
 The first important question to ask when doing regression is whether it is appropriate to include a spatial element. This might seem obvious in some cases, but not necessarily all the time. A series of tests have thus been developed to test for what is called spatial autocorrelation. Spatial autocorrelation is a measure of how similar the values of a variable are within a certain geographic area. If spatial autocorrelation is not accounted for, regression models might over or underestimate relationships between dependent and independent variables and undermine the validity of the models. The most common spatial autocorrelation tests are:
@@ -66,35 +68,7 @@ Once you determine that there is spatial autocorrelation, it then becomes import
 
 ### GWR/Kernel Bandwidth
 
-------------------------------------------------------------------------
-
-Source: Geographic Data Science in Python
-
-**Spatial Weights**
-
-Spatial questions target specific information about the spatial configuration of an outcome variable. When it comes to spatial analysis, we are often building a topography, a mathematical structure that expresses connectivity between observations. This weighting can help us create a *geographically weighted regression*; local version of spatial regression that generates parameters dis aggregated by spatial units of analysis , partial weights are one way to express this topology. Examples of spatial weights include
-
--   Contiguity Weights - A contiguous pair of spatial objects who share a common border,
-
--   Distance based weights - Proximity based, often observing the nearest neighbors, requires defining k nearest neighbors with spatial information used to calculate centroids
-
--   Block Weights - We weigh spatial elements based on a specific geographic group they belong to, and any elements not in the group disconnected from those observations, e.g. connecting counties to states
-
-**Bringing Space Into a Regression**
-
-Spatial regression involves introducing geographic space or context into our regressions when we feel that it plays a role or can act as a proxy for other unobserved variables. There are a variety of methods one can use to do this.
-
--   Spatial Feature Engineering
-
-    -   In data science, feature engineering involves applying domain knowledge to raw data in order to structure it in a way that is meaningful, in other words, transforming a dataset to prepare it for analysis
-
-    -   Geography is one of the best ways to introduce domiain knowledge into a data science problem.
-
-    -   Spatial feature engineering is the process of developing additional information from raw data using geographical knowledge
-
-    -   Simplest example -
-
-------------------------------------------------------------------------
+### Putting it all together
 
 ## Geospatial Regression with R
 
