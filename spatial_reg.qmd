@@ -46,13 +46,19 @@ This test computes an index based on the distance between points. An index of -1
 
 Since this is the most common autocorrelation test, this is the one we will be using.
 
+\######### Add equation \#######
+
 #### Geary's C test
 
 This test is very similar to Moran's I test but is more sensitive to local spatial autocorrelation. In other words, whereas Moran's tests the global spatial autocorrelation, Geary's measures the pattern of spatial correlation within sub-regions of the data. The results are also the different to Moran's, with values closer to 0 representing positive spatial autocorrelation and higher than 1 representing negative spatial autocorrelation.
 
+\######### Add equation \#######
+
 #### Getis-Ord G test
 
 The Getis-Ord G test is a statistical test used to identify spatial patterns, such as hot spots and cold spots, in data. This test is based on a measure called the G statistic, which ranges from -infinity to +infinity. A positive G statistic indicates a hot spot, where the values of the dependent variable are higher than expected given their spatial location. A negative G statistic indicates a cold spot, where the values of the dependent variable are lower than expected given their spatial location. As before, the G statistic can then be compared to a critical value to determine whether the spatial patterns in the data are statistically significant.
+
+\######### Add equation \#######
 
 ### Spatial Weighting
 
@@ -64,11 +70,65 @@ Once you determine that there is spatial autocorrelation, it then becomes import
 
 -   Rook contiguity weighting: This method assigns a weight based on whether it is contiguous (i.e., touching) with other data points. A data point is given a weight of 1 if it is contiguous with at least one other data point, and a weight of 0 if it is not. This method is easy to understand, but it only gives a binary measure and does not take into account the actual distance between points.
 
+These methods are often used to create a matrix that links each data point to the others. This matrix is then used to generate a spatial lag or spatial error model.
+
 ### Spatial Lag
 
-### GWR/Kernel Bandwidth
+Spatial lag is multiplication of the spatial weigh matrix and the dependent variables. This generates a new independent variable to be used in the regression that will take into account the spacial relationship between the dependent variables. The independent variables can also be "lagged" in a similar way.
+
+\######## Add equation \#########
+
+The results of spatial lag is a variable that averages out the neighboring values of a location.
+
+### Geographically weighted regression
+
+Geographically weighted regression (GWR) is a type of spatial regression analysis that is used to model the relationship between dependent and independent variables in a spatial dataset. Unlike traditional regression models, which assume that the relationship between the variables is the same across the entire study area, GWR allows the relationship to vary across different locations.
+
+In GWR, the coefficients of the regression model are estimated separately for each location, rather than assuming a single set of coefficients for the entire dataset. This allows the model to capture local variations in the relationship between the dependent and independent variables, which may be due to factors such as spatial heterogeneity or spatial non-stationarity.
+
+To fit a GWR model, the researcher needs to specify the dependent and independent variables, the spatial weights matrix, and the bandwidth, which is a measure of the spatial extent over which the coefficients are estimated. The output of a GWR model includes the estimated coefficients for each location, as well as measures of model fit and diagnostic statistics.
+
+The bandwidth is a parameter that determines the spatial extent over which the coefficients of the regression model are estimated. The bandwidth is typically specified as a distance or a number of neighboring observations, and it controls the amount of spatial smoothing that is applied to the estimated coefficients.
+
+There are different methods for determining the bandwidth in GWR, depending on the research question and the characteristics of the data. One common approach is to use cross-validation, where the bandwidth is selected based on the criterion of minimizing the prediction error at each location. Another approach is to use the method of least squares cross-validation, which minimizes the sum of squared residuals across all locations.
 
 ### Putting it all together
+
+Luckily you don't have to do all of this manually: you can just use programming packages to run these analyses. Generally the process is:
+
+1.  Obtain and clean your data
+2.  Use your feature engineering skills to understand what variables to use in your regression
+3.  Run a spatial autocorrelation test to see if there is a spatial component
+
+-   Moran's I test
+
+-   Geary's C test
+
+-   Getis-Ord G test
+
+4.  Perform the regression
+
+-   Using spatial lag:
+
+```{=html}
+<!-- -->
+```
+    1.  Generate a spatial weight matrix
+
+    2.  Combine the spatial weight with the dependent variable to generate a new independent variable
+
+    3.  Run regression on the result
+
+-   Using Geographically Weighted Regression
+
+```{=html}
+<!-- -->
+```
+    1.  Generate the bandwidth
+
+    2.  Run the GWR model
+
+5.  Analyze the results and predict new values
 
 ## Geospatial Regression with R
 
@@ -133,7 +193,7 @@ tx_data <- get_acs(
   geometry = TRUE,
   output = "wide",
   year = 2020
-) %>%
+  ) %>%
   select(-NAME) %>%
   st_transform(32138)
 
@@ -156,6 +216,7 @@ tx_unemp<- ggplot(tx_data, aes(fill = unemp_rt)) +
   scale_fill_viridis_c(option = "magma", direction = -1) +
   theme_void() +
   labs(fill = "Unemployment Rate (%)")
+
 tx_sp <- ggplot(tx_data, aes(fill = speak_sp_rt)) +
   geom_sf(color = NA) +
   scale_fill_viridis_c(option = "magma", direction = -1) +
@@ -193,9 +254,11 @@ library(spdep)
 
 #add residuals to Texas dataframe and establish spatial weights
 tx_data$residuals <- residuals(lm_model)
+
 wts <- tx_data %>%
   poly2nb() %>%
   nb2listw()
+
 #run spatial autocorrelation test
 moran.test(tx_data$residuals, wts)
 
@@ -216,16 +279,16 @@ First, we need to choose a kernel bandwidth, which will give us a way to calcula
 library(GWmodel)
 library(sf)
 
-#turn Texas dataframe into aa spatial dataframe
+#turn Texas dataframe into a spatial dataframe
 tx_data_sp <- tx_data %>%
-as_Spatial()
+  as_Spatial()
 
 #run cross-validation to find best kernel bandwidth
 bw <- bw.gwr(
-formula = formula,
-data = tx_data_sp,
-kernel = "bisquare",
-adaptive = TRUE)
+  formula = formula,
+  data = tx_data_sp,
+  kernel = "bisquare",
+  adaptive = TRUE)
 
 
 ```
@@ -268,7 +331,6 @@ These results have some potential explanations. The area in Central Texas in whi
 
 In South Texas, we actually see a small but positive relationship between Spanish speaking and unemployment. Considering that this area borders Mexico, it's likely that Spanish is the first language for many residents and businesses that operate there. Thus, it's possible that the people who do not speak Spanish are unique in ways that allow them to be more attractive in the job market, subsequently making Spanish-speaking positively associated with unemployment, although this is, again, a small effect.
 
-
 ## Conclusion and Discussion
 
 Spatial regressions are one of several potential methods in a rising field of spatial analysis. Whether it is to deal with violations of the i.i.d assumption in order to create a more robust global model, or utilize the power of spatial mapping techniques to illustrate local relationships, it is a flexible and broad analytical tool that can be applied in many disciplines including economics, bio statistics, criminology, and others.
@@ -276,4 +338,3 @@ Spatial regressions are one of several potential methods in a rising field of sp
 What we have demonstrated in this paper just scratches the surface. The future of spatial regression techniques has numerous possibilities. The recent utilization of satellite imagery, for examples, offers the opportunity to work with raw data spanning millions of observations of pixels. Such techniques are [especially important for tracking how communities are able to achieve target social and environmental goals](https://www.oecd.org/iaos2018/programme/IAOS-OECD2018_Holloway-Mengersen-Helmstedt.pdf). Some satellite imagery can even provide information on night-time imaging, which has even been [utilized in linear regression to measure housing vacancy within census tracts](https://www.mdpi.com/2072-4292/10/12/1920/htm). Additionally, more advanced AI capabilities and machine learning techniques can supplement spatial regression analysis. For example,[one analysis](https://www.tandfonline.com/doi/abs/10.1080/00045608.2012.707587) used a combination of clustering using a SKATER algorithm commonly used to determine spatial relationships between neighboring areas, and dimension reduction with Principal Component Analysis (PCA) to derive a mixed GWR\]
 
 Overall, this emergence and power makes spatial regression analysis the future of both predictive and causal quantitative analysis in academic and policy circles. Numerous science and social science questions include space as a factor, and we have only recently found a way to use spatial regression techniques to incorporate the complexity they deserve. Thus, we believe that spatial regressions will soon become the most common form of regression analysis used to solve important policy problems., and it was prudent to examine its basics in this paper.
-
