@@ -12,6 +12,8 @@ self-contained: true
 urlcolor: blue
 ---
 
+[![](Images/SpatialReg.png)](https://rspatial.org/raster/analysis/7-spregression.html)
+
 ## Background and Motivation
 
 Geographic data is everywhere. This type of data also explains many social processes and individual decisions. As this kind of data becomes more ubiquitous, it is important to understand where and how to use it, and how to extract meaningful insights from geographical properties
@@ -30,6 +32,32 @@ Spatial regression is also easier to visualize than just rows and columns of dat
 
 ### Brief Refresher on Regression
 
+Linear regression is a statistical method used to model the relationship between a dependent variable and one or more independent variables. In its simplest form, linear regression estimates the relationship between a dependent variable and one independent variable using a straight line. This line is known as the regression line, and it is used to make predictions about the dependent variable based on values of the independent variable. It is a popular method because it is relatively simple to implement and interpret, and it can be extended to model more complex relationships between variables.
+
+The basic idea behind linear regression is to find the line that best fits the data. This line is the one that minimizes the sum of the squared distances between the points and the line. This method is called least squares regression, and it is the most commonly used method for fitting a regression line.
+
+Once the regression line is found, it can be used to make predictions about the dependent variable based on new values of the independent variable. For example, if we have a model that relates the price of a house to its square footage, we can use this model to predict the price of a house with a given square footage.
+
+In summary, linear regression is a statistical method used to model the relationship between a dependent variable and one or more independent variables using a straight line. This line is used to make predictions about the dependent variable based on values of the independent variable.
+
+\
+
+[![Linear Regression](Images/LinearRegression.webp)](https://medium.datadriveninvestor.com/machine-learning-101-part-1-24835333d38a)
+
+Basic equation for linear regression:
+
+$$
+\hat{y}=\beta_{0}+\beta_{1}X_1+\beta_{2}X_2+\beta_{3}X_3+...+\beta_{n}X_n
+$$
+
+### Limitations of Spatial Regression
+
+Spatial regression assumes that the relationship between the dependent and independent variables is linear. This means that if the relationship between the variables is nonlinear, the model may not be able to accurately capture it.
+
+Another limitation of spatial regression is that it can be computationally intensive, especially for large datasets. This can make it difficult to fit the model and obtain accurate results in a timely manner.
+
+Additionally, spatial regression assumes that the spatial relationship between the variables is constant over time. If the spatial relationship between the variables changes over time, the model may not be able to accurately capture these changes.
+
 ### Spatial Autocorrelation
 
 The first important question to ask when doing regression is whether it is appropriate to include a spatial element. This might seem obvious in some cases, but not necessarily all the time. A series of tests have thus been developed to test for what is called spatial autocorrelation. Spatial autocorrelation is a measure of how similar the values of a variable are within a certain geographic area. If spatial autocorrelation is not accounted for, regression models might over or underestimate relationships between dependent and independent variables and undermine the validity of the models. The most common spatial autocorrelation tests are:
@@ -40,25 +68,29 @@ The first important question to ask when doing regression is whether it is appro
 
 -   Getis-Ord G test
 
-#### Moran's I test
+#### [Moran's I test](https://pro.arcgis.com/en/pro-app/latest/tool-reference/spatial-statistics/h-how-spatial-autocorrelation-moran-s-i-spatial-st.htm)
 
 This test computes an index based on the distance between points. An index of -1 means that the data is evenly spread out, an index of 0 means that the data is random, and an index of 1 means that the data is clumped together. This index is then compared to critical values to see if there is significant spatial autocorrelation (based on a null hypothesis that there isn't).
 
 Since this is the most common autocorrelation test, this is the one we will be using.
 
-\######### Add equation \#######
+$$
+I=\frac{n}{S_0}\frac{\sum_{i=1}^{n}\sum_{j=1}^{n} w_{i,j} z_i z_j}{\sum_{i=1}^{n} z^2_i}
+$$
 
-#### Geary's C test
+#### [Geary's C test](https://en.wikipedia.org/wiki/Geary%27s_C)
 
 This test is very similar to Moran's I test but is more sensitive to local spatial autocorrelation. In other words, whereas Moran's tests the global spatial autocorrelation, Geary's measures the pattern of spatial correlation within sub-regions of the data. The results are also the different to Moran's, with values closer to 0 representing positive spatial autocorrelation and higher than 1 representing negative spatial autocorrelation.
 
-\######### Add equation \#######
+$$
+C=\frac{(N-1)\sum_{i=1}^{n} \sum_{j=1}^{n} w_{i,j} (x_i-x_j)^2}{2W\sum_{i=1}^{n} (x_i - \bar{x})^2}
+$$
 
-#### Getis-Ord G test
+#### [Getis-Ord G test](https://pro.arcgis.com/en/pro-app/latest/tool-reference/spatial-statistics/h-how-hot-spot-analysis-getis-ord-gi-spatial-stati.htm)
 
 The Getis-Ord G test is a statistical test used to identify spatial patterns, such as hot spots and cold spots, in data. This test is based on a measure called the G statistic, which ranges from -infinity to +infinity. A positive G statistic indicates a hot spot, where the values of the dependent variable are higher than expected given their spatial location. A negative G statistic indicates a cold spot, where the values of the dependent variable are lower than expected given their spatial location. As before, the G statistic can then be compared to a critical value to determine whether the spatial patterns in the data are statistically significant.
 
-\######### Add equation \#######
+![Getis-Ord G test equations](Images/Getis-OrdG.png)
 
 ### Spatial Weighting
 
@@ -76,7 +108,9 @@ These methods are often used to create a matrix that links each data point to th
 
 Spatial lag is multiplication of the spatial weigh matrix and the dependent variables. This generates a new independent variable to be used in the regression that will take into account the spacial relationship between the dependent variables. The independent variables can also be "lagged" in a similar way.
 
-\######## Add equation \#########
+$$
+Y=\beta_0+\beta_sWY+\beta_2X_2+…\beta_nX_n
+$$
 
 The results of spatial lag is a variable that averages out the neighboring values of a location.
 
@@ -110,23 +144,17 @@ Luckily you don't have to do all of this manually: you can just use programming 
 
 -   Using spatial lag:
 
-```{=html}
-<!-- -->
-```
-    1.  Generate a spatial weight matrix
+    a.  Generate a spatial weight matrix
 
-    2.  Combine the spatial weight with the dependent variable to generate a new independent variable
+    b.  Combine the spatial weight with the dependent variable to generate a new independent variable
 
-    3.  Run regression on the result
+    c.  Run regression on the result
 
 -   Using Geographically Weighted Regression
 
-```{=html}
-<!-- -->
-```
-    1.  Generate the bandwidth
+    a.  Generate the bandwidth
 
-    2.  Run the GWR model
+    b.  Run the GWR model
 
 5.  Analyze the results and predict new values
 
@@ -163,7 +191,8 @@ Using the [*tidycensus*](https://walker-data.com/census-r/modeling-us-census-dat
 We also include other demographic variables like population density, median age, percent of people with a bachelor's degree, percent of people foreign born and percent of people who are white. These predictors are important so we can control for the many different factors associated with speaking Spanish, especially in a state where Hispanic Americans are less affluent than other groups due to reasons unrelated to the language they speak. We must do some extra calculations for unemployment rate by dividing total employment by the total labor force, and also the share of Spanish speakers who do not speak English very well, dividing the number of them for a given tract by the total population.
 
 ```{r}
-
+#| output: false
+#| warning: false
 #load packages
 library(tidyverse)
 library(units)
@@ -338,3 +367,9 @@ Spatial regressions are one of several potential methods in a rising field of sp
 What we have demonstrated in this paper just scratches the surface. The future of spatial regression techniques has numerous possibilities. The recent utilization of satellite imagery, for examples, offers the opportunity to work with raw data spanning millions of observations of pixels. Such techniques are [especially important for tracking how communities are able to achieve target social and environmental goals](https://www.oecd.org/iaos2018/programme/IAOS-OECD2018_Holloway-Mengersen-Helmstedt.pdf). Some satellite imagery can even provide information on night-time imaging, which has even been [utilized in linear regression to measure housing vacancy within census tracts](https://www.mdpi.com/2072-4292/10/12/1920/htm). Additionally, more advanced AI capabilities and machine learning techniques can supplement spatial regression analysis. For example,[one analysis](https://www.tandfonline.com/doi/abs/10.1080/00045608.2012.707587) used a combination of clustering using a SKATER algorithm commonly used to determine spatial relationships between neighboring areas, and dimension reduction with Principal Component Analysis (PCA) to derive a mixed GWR\]
 
 Overall, this emergence and power makes spatial regression analysis the future of both predictive and causal quantitative analysis in academic and policy circles. Numerous science and social science questions include space as a factor, and we have only recently found a way to use spatial regression techniques to incorporate the complexity they deserve. Thus, we believe that spatial regressions will soon become the most common form of regression analysis used to solve important policy problems., and it was prudent to examine its basics in this paper.
+
+### Other sources
+
+[Regression analysis using GIS](https://libraries.mit.edu/files/gis/regression_presentation_iap2013.pdf)
+
+[Spatial Data Science with R](https://rspatial.org/raster/index.html)
