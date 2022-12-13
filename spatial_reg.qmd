@@ -191,7 +191,8 @@ Using the [*tidycensus*](https://walker-data.com/census-r/modeling-us-census-dat
 We also include other demographic variables like population density, median age, percent of people with a bachelor's degree, percent of people foreign born and percent of people who are white. These predictors are important so we can control for the many different factors associated with speaking Spanish, especially in a state where Hispanic Americans are less affluent than other groups due to reasons unrelated to the language they speak. We must do some extra calculations for unemployment rate by dividing total employment by the total labor force, and also the share of Spanish speakers who do not speak English very well, dividing the number of them for a given tract by the total population.
 
 ```{r}
-
+#| output: false
+#| warning: false
 #load packages
 library(tidyverse)
 library(units)
