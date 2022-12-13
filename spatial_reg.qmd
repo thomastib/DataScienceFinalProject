@@ -182,8 +182,6 @@ Other useful R packages when working with spatial data:
 
 ## Application
 
-Source: https://walker-data.com/census-r/modeling-us-census-data.html
-
 Now that we've discussed the background and various methods used in spatial regressions, we can utilize the Census's American Community Survey (ACS) data to see how it all plays out in practice. Demographic statistics are common covariates utilized in linear regression, but they run into issues with spatial autocorrelation, which makes ACS data a great candidate for spatial regression techniques.
 
 Using the [*tidycensus*](https://walker-data.com/census-r/modeling-us-census-data.html) package, we are interested in the effects of several predictor variables on the unemployment rate in Texas, namely the effect of the proportion of Spanish speakers in a given Census tract given Texas's high Hispanic population. We would expect that being able to speak Spanish has a negative effect on the unemployment rate in Texas, but we are interested to see how this effect varies in different regions in the state, in particular, South Texas near the Mexican border where virtually all residents speak Spanish.
@@ -373,3 +371,5 @@ Overall, this emergence and power makes spatial regression analysis the future o
 [Regression analysis using GIS](https://libraries.mit.edu/files/gis/regression_presentation_iap2013.pdf)
 
 [Spatial Data Science with R](https://rspatial.org/raster/index.html)
+
+[Modeling Census Data](https://walker-data.com/census-r/modeling-us-census-data.html)
